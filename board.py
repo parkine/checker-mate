@@ -7,13 +7,14 @@ class Board:
   def __init__(self):
     self.board = []
     self.create_board()
+    self.selected = (None, None)
 
   def draw_grid(self, win):
     win.fill(BROWN)
     for r in range(ROWS):
       for c in range(COLS):
         if(c + r) % 2 == 0:
-          pygame.draw.rect(win, BEIGE, (r*SQUARE_WIDTH, c*SQUARE_WIDTH, SQUARE_WIDTH,SQUARE_WIDTH))
+          pygame.draw.rect(win, BEIGE, (r*SQUARE_WIDTH, c*SQUARE_WIDTH, SQUARE_WIDTH, SQUARE_WIDTH))
 
   #The board's index: left top corner = (0,0) && right bottom = (7,7)
   def create_board(self):
@@ -34,9 +35,17 @@ class Board:
     self.draw_grid(win)
     for r in range(ROWS):
       for c in range(COLS):
+        if self.selected[0] == r and self.selected[1] == c :
+          pygame.draw.rect(win, GREY, (c*SQUARE_WIDTH, r*SQUARE_WIDTH, SQUARE_WIDTH, SQUARE_WIDTH), 8)
         piece = self.board[r][c]
         if piece != 0:
             piece.draw(win)
+
+  def select(self, row, col) :
+    if self.selected == (row, col) :
+      self.selected = (None, None)
+    else :
+      self.selected = (row, col)
   
   def move(self, piece, row, col):
     self.board[piece.row][piece.col] = 0
