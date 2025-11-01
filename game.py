@@ -4,15 +4,12 @@ from constants import *
 from board import Board
 from piece import Piece
 
-# game.py (only the select/_move parts shown)
-
 class Game:
   def __init__(self, win):
     self.win = win
     self.selected = None
     self.board = Board()
     self.turn = BLACK
-    self.valid_moves = {}
 
   def select(self, row, col):
     # First click: pick up a piece 
@@ -25,9 +22,19 @@ class Game:
 
     # Second click: try to move to (row, col)
     moved = self._move(row, col)
-    
+
+    # if move succeeded, advance to next player's turn
+    if moved:
+      self.switch_turn()
+
     self.selected = None
     return moved
+
+  def switch_turn(self):
+    self.turn = BLACK if self.turn == RED else RED
+
+  def get_current_player(self):
+    return self.turn
 
   def _move(self, row, col):
     piece = self.selected
