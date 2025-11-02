@@ -34,7 +34,7 @@ class Board:
     self.draw_grid(win)
     for r in range(ROWS):
       for c in range(COLS):
-        piece = self.board[r][c]
+        piece = self.get_piece(r, c)
         if piece != 0:
             piece.draw(win)
   
@@ -50,6 +50,20 @@ class Board:
 
   def get_piece(self, row, col):
     return self.board[row][col]
+  
+  def deep_copy_board(self):
+    new_board = Board()
+    for r in range(ROWS):
+        for c in range(COLS):
+            cell = self.get_piece(r, c)
+            if cell == 0:
+                new_board.set_piece(r, c, 0)
+            else:
+                p = Piece(cell.row, cell.col, cell.color)
+                if getattr(cell, 'king', True):
+                    p.make_king()
+                new_board.set_piece(r, c, p)
+    return new_board
   
   def debug_print_board(self):
     for rr in self.board.board:

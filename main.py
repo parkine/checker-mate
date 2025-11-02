@@ -2,6 +2,7 @@
 import pygame
 from constants import *
 from game import Game
+import argparse
 
 FPS = 60
 
@@ -14,7 +15,7 @@ def get_row_col_from_mouse(pos):
   col = x // SQUARE_WIDTH
   return row, col
 
-def main():
+def run_human_game():
   run = True
   clock = pygame.time.Clock()
   game = Game(WIN)
@@ -38,5 +39,21 @@ def main():
     game.update()
 
   pygame.quit()
+
+def run_agent_game():
+   return
+
+def main():
+    parser = argparse.ArgumentParser(description="Checker Game with AI Agents")
+    parser.add_argument("--mode", choices=["human", "agent"], default="human",
+                        help="Choose who plays: human, or agent")
+    args = parser.parse_args()
+
+    if args.mode == "human":
+        print("Running in human vs human mode")
+        run_human_game()
+    elif args.mode == "agent":
+        print("Running human vs AI mode")
+        run_agent_game()
 
 main()
