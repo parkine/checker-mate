@@ -2,32 +2,33 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Tuple
 from constants import *
-from agent import Agent
 from board import Board
 from piece import Piece
 
+Color = Tuple[int, int, int]
+
 class GameState:
   #return the list of pieces of the agent
-  def get_all_pieces(self, agent: Agent, board: Board) -> list[Piece]:
+  def get_all_pieces(self, color: Color, board: Board) -> list[Piece]:
     pieces = []
 
     for r in range(ROWS):
       for c in range(COLS):
         p = board.get_piece(r, c)
-        if p != 0 and p.color == agent.color:
+        if p != 0 and p.color == color:
           pieces.append(p)
-    
+
     return pieces
   
   #return all available legal action of the agent
-  def get_legal_actions(self, agent: Agent, board: Board):
+  def get_legal_actions(self, color: Color, board: Board):
     #black moves top to bottom
-    fw = 1 if agent.color == BLACK else -1
-    bw = -1 if agent.color == BLACK else 1
+    fw = 1 if color == BLACK else -1
+    bw = -1 if color == BLACK else 1
     left = -1
     right = 1
 
-    pieces = self.get_all_pieces(agent, board)
+    pieces = self.get_all_pieces(color, board)
 
     actions = {}
     for p in pieces:
@@ -84,30 +85,30 @@ class GameState:
     return actions
   
   #In my turn, if opponent has no pieces left, I win
-  def is_win(self, agent: Agent, board: Board):
-    opponent_color = RED if agent.color == BLACK else BLACK
+  def is_win(self, color: Color, board: Board):
+    opponent_color = RED if color == BLACK else BLACK
     for r in range(ROWS):
       for c in range(COLS):
         p = board.get_piece(r, c)
         if p != 0 and p.color == opponent_color:
           return False
     return True
-  
+
   #In my turn, if I have no legal moves, I lose
-  def is_lose(self, agent: Agent, board: Board):
-    moves = self.get_legal_actions(agent, board)
+  def is_lose(self, color: Color, board: Board):
+    moves = self.get_legal_actions(color, board)
     # Check if any piece has valid moves
     has_valid_moves = any(len(moves[key]) > 0 for key in moves)
     if not has_valid_moves:
       return True
-  
-  #If the number of kings are the same and no one has won or lost, it's a draw
-  def is_draw(self, agent: Agent, board: Board):
-    if(self.is_win(agent, board) == False and self.is_lose(agent, board) == False):
-      opponent_color = RED if agent.color == BLACK else BLACK
 
-      my_pieces = self.get_all_pieces(agent, board)
-      opp_pieces = self.get_all_pieces(Agent(opponent_color), board)
+  #If the number of kings are the same and no one has won or lost, it's a draw
+  def is_draw(self, color: Color, board: Board):
+    if(self.is_win(color, board) == False and self.is_lose(color, board) == False):
+      opponent_color = RED if color == BLACK else BLACK
+
+      my_pieces = self.get_all_pieces(color, board)
+      opp_pieces = self.get_all_pieces(opponent_color, board)
 
       my_king_count = sum(1 for p in my_pieces if p.king)
       opp_king_count = sum(1 for p in opp_pieces if p.king)
@@ -116,8 +117,8 @@ class GameState:
         return True
 
   #determine if the game has ended
-  def is_terminal(self, agent: Agent, board: Board):
-    return self.is_win(agent, board) or self.is_lose(agent, board) or self.is_draw(agent, board)
+  def is_terminal(self, color: Color, board: Board):
+    return self.is_win(color, board) or self.is_lose(color, board) or self.is_draw(color, board)
 
   #generate a new board state after applying the move
   def generate_successor(self, board: Board, move: Move) -> Board:
