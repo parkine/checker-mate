@@ -11,3 +11,6 @@ __pycache__/
 # macOS / Windows system files
 .DS_Store
 Thumbs.db
+
+# Gameplay logs (we don't need to track these)
+logs/
