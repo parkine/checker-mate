@@ -21,7 +21,7 @@ class GameState:
     return pieces
   
   #return all available legal action of the agent
-  def get_legal_actions(self, color: Color, board: Board):
+  def get_legal_actions(self, color: Color, board: Board) ->list[Move]:
     #black moves top to bottom
     fw = 1 if color == BLACK else -1
     bw = -1 if color == BLACK else 1
@@ -30,19 +30,16 @@ class GameState:
 
     pieces = self.get_all_pieces(color, board)
 
-    actions = {}
+    actions = []
     for p in pieces:
       r, c = p.row, p.col
-      key = (r, c)
-      if key not in actions:
-        actions[key] = []
 
       #forward left
       if self.range_check(r + fw, c + left) and board.get_piece(r + fw, c + left) == 0:
-        actions[key].append((r + fw, c + left))
+        actions.append(Move(start=(r, c), end=(r + fw, c + left)))
       #forward right
       if self.range_check(r + fw, c + right) and board.get_piece(r + fw, c + right) == 0:
-        actions[key].append((r + fw, c + right))
+        actions.append(Move(start=(r, c), end=(r + fw, c + right)))
 
       
       # check jumps
@@ -51,36 +48,36 @@ class GameState:
       mid_c_fl = c + left
       mid_p_fl = board.get_piece(mid_r_fl, mid_c_fl) if self.range_check(mid_r_fl, mid_c_fl) else 0
       if self.jump_check(r + (fw * 2), c + (left * 2), p, mid_p_fl) and board.get_piece(r + (fw * 2), c + (left * 2)) == 0:
-        actions[key].append((r + (fw * 2), c + (left * 2)))
+        actions.append(Move(start=(r, c), end=(r + (fw * 2), c + (left * 2))))
 
       # forward right jump
       mid_r_fr = r + fw
       mid_c_fr = c + right
       mid_p_fr = board.get_piece(mid_r_fr, mid_c_fr) if self.range_check(mid_r_fr, mid_c_fr) else 0
       if self.jump_check(r + (fw * 2), c + (right * 2), p, mid_p_fr) and board.get_piece(r + (fw * 2), c + (right * 2)) == 0:
-        actions[key].append((r + (fw * 2), c + (right * 2)))
+        actions.append(Move(start=(r, c), end=(r + (fw * 2), c + (right * 2))))
 
       if(p.king):
         # backward left
         if self.range_check(r + bw, c + left) and board.get_piece(r + bw, c + left) == 0:
-          actions[key].append((r + bw, c + left))
+          actions.append(Move(start=(r, c), end=(r + bw, c + left)))
         # backward right
         if self.range_check(r + bw, c + right) and board.get_piece(r + bw, c + right) == 0:
-          actions[key].append((r + bw, c + right))
+          actions.append(Move(start=(r, c), end=(r + bw, c + right)))
 
         # backward left jump
         mid_r_bl = r + bw
         mid_c_bl = c + left
         mid_p_bl = board.get_piece(mid_r_bl, mid_c_bl) if self.range_check(mid_r_bl, mid_c_bl) else 0
         if self.jump_check(r + (bw * 2), c + (left * 2), p, mid_p_bl) and board.get_piece(r + (bw * 2), c + (left * 2)) == 0:
-          actions[key].append((r + (bw * 2), c + (left * 2)))
+          actions.append(Move(start=(r, c), end=(r + (bw * 2), c + (left * 2))))
 
         # backward right jump
         mid_r_br = r + bw
         mid_c_br = c + right
         mid_p_br = board.get_piece(mid_r_br, mid_c_br) if self.range_check(mid_r_br, mid_c_br) else 0
         if self.jump_check(r + (bw * 2), c + (right * 2), p, mid_p_br) and board.get_piece(r + (bw * 2), c + (right * 2)) == 0:
-          actions[key].append((r + (bw * 2), c + (right * 2)))
+          actions.append(Move(start=(r, c), end=(r + (bw * 2), c + (right * 2))))
 
     return actions
   
@@ -98,9 +95,7 @@ class GameState:
   def is_lose(self, color: Color, board: Board):
     moves = self.get_legal_actions(color, board)
     # Check if any piece has valid moves
-    has_valid_moves = any(len(moves[key]) > 0 for key in moves)
-    if not has_valid_moves:
-      return True
+    return len(moves) == 0
 
   #If the number of kings are the same and no one has won or lost, it's a draw
   def is_draw(self, color: Color, board: Board):
@@ -113,7 +108,7 @@ class GameState:
       my_king_count = sum(1 for p in my_pieces if p.king)
       opp_king_count = sum(1 for p in opp_pieces if p.king)
 
-      if my_king_count == opp_king_count:
+      if my_king_count == opp_king_count and len(my_pieces)-my_king_count == 0 and len(opp_pieces)-opp_king_count == 0:
         return True
 
   #determine if the game has ended

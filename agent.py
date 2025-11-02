@@ -108,8 +108,8 @@ class Agent:
         my_moves = self.game_state.get_legal_actions(self.color, board)
         opp_moves = self.game_state.get_legal_actions(opponent_color, board)
 
-        my_move_count = sum(len(moves) for moves in my_moves.values())
-        opp_move_count = sum(len(moves) for moves in opp_moves.values())
+        my_move_count = len(my_moves) if my_moves else 0
+        opp_move_count = len(opp_moves) if opp_moves else 0
 
         mobility_score = (my_move_count - opp_move_count) * 0.5
 
@@ -180,15 +180,9 @@ class Agent:
             else:
                 # Draw
                 return 0
-
-        # Get all legal moves for current player
-        legal_actions = self.game_state.get_legal_actions(current_color, board)
-
-        # Convert actions dict to list of Move objects
-        moves = []
-        for start_pos, end_positions in legal_actions.items():
-            for end_pos in end_positions:
-                moves.append(Move(start=start_pos, end=end_pos))
+        
+        # Get all legal moves
+        moves = self.game_state.get_legal_actions(current_color, board)
 
         if not moves:
             # No legal moves available (should be caught by is_terminal, but safety check)
@@ -257,13 +251,7 @@ class Agent:
         self.pruning_count = 0
 
         # Get all legal moves
-        legal_actions = self.game_state.get_legal_actions(self.color, board)
-
-        # Convert to list of Move objects
-        moves = []
-        for start_pos, end_positions in legal_actions.items():
-            for end_pos in end_positions:
-                moves.append(Move(start=start_pos, end=end_pos))
+        moves = self.game_state.get_legal_actions(self.color, board)
 
         if not moves:
             return None, 0
