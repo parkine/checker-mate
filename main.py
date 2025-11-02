@@ -138,7 +138,7 @@ def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0):
         logger.log_legal_moves(legal_actions, current_color)
 
         # Check if agent has any moves
-        total_moves = sum(len(moves) for moves in legal_actions.values())
+        total_moves = len(legal_actions)
         if total_moves == 0:
             winner = RED if current_color == BLACK else BLACK
             logger.log_game_end(winner, "Current player has no legal moves")
