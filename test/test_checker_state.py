@@ -1,5 +1,4 @@
 from checker import GameState, Move
-from agent import Agent
 from board import Board
 from constants import BLACK, RED
 
@@ -7,11 +6,9 @@ from constants import BLACK, RED
 def test_get_all_pieces_returns_correct_color():
     b = Board()
     state = GameState()
-    black_agent = Agent(BLACK, [])
-    red_agent = Agent(RED, [])
 
-    black_pieces = state.get_all_pieces(black_agent, b)
-    red_pieces = state.get_all_pieces(red_agent, b)
+    black_pieces = state.get_all_pieces(BLACK, b)
+    red_pieces = state.get_all_pieces(RED, b)
 
     # counts should match initial board counts
     assert len(black_pieces) == 12
@@ -21,9 +18,8 @@ def test_get_all_pieces_returns_correct_color():
 def test_get_legal_actions_initial_board():
     b = Board()
     state = GameState()
-    black_agent = Agent(BLACK, [])
 
-    actions = state.get_legal_actions(black_agent, b)
+    actions = state.get_legal_actions(BLACK, b)
 
     # actions should be a dict mapping piece coords to move lists
     assert isinstance(actions, dict)
@@ -80,7 +76,7 @@ def test_generate_successor_capture_and_original_unchanged():
     end = (4, 3)
     mv = Move(start=start, end=end)
     orig_piece = b.get_piece(*start)
-    succ = gs.generate_successor(orig_piece, b, mv)
+    succ = gs.generate_successor(b, mv)
 
     # successor should have piece at end
     p_succ = succ.get_piece(*end)
@@ -105,7 +101,7 @@ def test_generate_successor_promotion_and_original_unchanged():
     b.set_piece(0, 1, 0)
 
     mv = Move(start=(1, 2), end=(0, 1))
-    succ = gs.generate_successor(p, b, mv)
+    succ = gs.generate_successor(b, mv)
 
     # successor piece at end should be king
     ps = succ.get_piece(0, 1)
