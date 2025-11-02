@@ -12,12 +12,15 @@ from datetime import datetime
 from typing import Optional
 from constants import BLACK, RED, ROWS, COLS
 
+
 class LogLevel:
     """Log level constants"""
+
     TRACE = 0  # Most verbose - all details
     DEBUG = 1  # Debug information - AI search details
-    INFO = 2   # Important events - turns, moves, game events
-    NONE = 3   # No logging
+    INFO = 2  # Important events - turns, moves, game events
+    NONE = 3  # No logging
+
 
 class GameLogger:
     """
@@ -62,9 +65,11 @@ class GameLogger:
         self.log_file = os.path.join(self.log_dir, f"game_{timestamp}.log")
 
         try:
-            self.file_handle = open(self.log_file, 'w', encoding='utf-8')
+            self.file_handle = open(self.log_file, "w", encoding="utf-8")
             self._write_to_file("=" * 80)
-            self._write_to_file(f"CHECKERS AI GAME LOG - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            self._write_to_file(
+                f"CHECKERS AI GAME LOG - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            )
             self._write_to_file("=" * 80)
             self._write_to_file("")
         except IOError as e:
@@ -97,7 +102,7 @@ class GameLogger:
         level_labels = {
             LogLevel.TRACE: "TRACE",
             LogLevel.DEBUG: "DEBUG",
-            LogLevel.INFO: "INFO "
+            LogLevel.INFO: "INFO ",
         }
         level_label = level_labels.get(level, "     ")
 
@@ -239,7 +244,9 @@ class GameLogger:
             return
 
         depth_str = f" (depth {depth})" if depth else ""
-        self.trace(f"  Evaluating move {move.start} -> {move.end}: score = {score:.2f}{depth_str}")
+        self.trace(
+            f"  Evaluating move {move.start} -> {move.end}: score = {score:.2f}{depth_str}"
+        )
 
     def log_ai_decision(self, agent, best_move, score, stats):
         """
@@ -262,13 +269,13 @@ class GameLogger:
         self.debug(f"    Branches Pruned: {stats['pruning_count']}")
 
         # Calculate pruning efficiency
-        if stats['nodes_explored'] > 0:
-            efficiency = (stats['pruning_count'] / stats['nodes_explored']) * 100
+        if stats["nodes_explored"] > 0:
+            efficiency = (stats["pruning_count"] / stats["nodes_explored"]) * 100
             self.debug(f"    Pruning Efficiency: {efficiency:.1f}%")
 
         # Update global statistics
-        self.total_nodes_explored += stats['nodes_explored']
-        self.total_pruning_count += stats['pruning_count']
+        self.total_nodes_explored += stats["nodes_explored"]
+        self.total_pruning_count += stats["pruning_count"]
 
         self.info("")
 
@@ -285,7 +292,9 @@ class GameLogger:
         color_name = "BLACK" if color == BLACK else "RED"
 
         move_type = "JUMP" if is_jump else "MOVE"
-        self.info(f"Executing {move_type}: {color_name} piece from {move.start} to {move.end}")
+        self.info(
+            f"Executing {move_type}: {color_name} piece from {move.start} to {move.end}"
+        )
 
         if is_jump:
             mid_r = (move.start[0] + move.end[0]) // 2
@@ -329,7 +338,9 @@ class GameLogger:
         self.info(f"  Total Branches Pruned: {self.total_pruning_count}")
 
         if self.total_nodes_explored > 0:
-            overall_efficiency = (self.total_pruning_count / self.total_nodes_explored) * 100
+            overall_efficiency = (
+                self.total_pruning_count / self.total_nodes_explored
+            ) * 100
             self.info(f"  Overall Pruning Efficiency: {overall_efficiency:.1f}%")
 
         if self.move_times:
@@ -360,13 +371,16 @@ class GameLogger:
         if self.file_handle:
             self._write_to_file("")
             self._write_to_file("=" * 80)
-            self._write_to_file(f"LOG CLOSED - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            self._write_to_file(
+                f"LOG CLOSED - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            )
             self._write_to_file("=" * 80)
             self.file_handle.close()
             self.file_handle = None
 
         if log_file_path:
             print(f"Log file saved to: {log_file_path}")
+
 
 def create_logger(log_level=LogLevel.INFO, log_to_file=True, log_dir="logs"):
     """
