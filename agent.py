@@ -6,7 +6,7 @@ minimax search algorithm. The evaluation function considers multiple factors
 including material advantage, king positioning, and board control.
 """
 
-from constants import BLACK, RED, ROWS
+from constants import BLACK, RED, ROWS, COLS
 from checker import GameState, Move
 
 
@@ -47,6 +47,10 @@ class Agent:
         2. Positional advantage: Pieces closer to promotion row are more valuable
         3. King advantage: Kings are more mobile and valuable
         4. Mobility: Number of available moves (more options = better position)
+        5. Center control: Pieces in center squares are more valuable (adjusted later in step 7)
+        6. Edge and corner safety: Pieces on edges or corners are safer and less likely to be captured
+        7. Non-edge penalty: Minor penalty for pieces not on edges/corners to discourage overexposure
+        8. Advanced king positioning: Kings further toward opponent's back row are more threatening
 
         Args:
           board: The Board object to evaluate
@@ -78,7 +82,7 @@ class Agent:
             else:
                 opp_material += 1.0
 
-        material_score = (my_material - opp_material) * 10
+        material_score = (my_material - opp_material) * 6
 
         # Positional Score: Reward pieces closer to promotion
         positional_score = 0
@@ -113,6 +117,7 @@ class Agent:
 
         mobility_score = (my_move_count - opp_move_count) * 0.5
 
+
         # Center Control: Pieces in center squares are more valuable
         center_score = 0
         center_squares = [(3, 3), (3, 4), (4, 3), (4, 4)]
@@ -125,6 +130,44 @@ class Agent:
             if (piece.row, piece.col) in center_squares:
                 center_score -= 2
 
+        # Corner and Edge Safety: Pieces on corners and edges are much safer and at less risk to be captured
+
+        edge_bonus = 0
+        corner_bonus = 0
+        non_edge_penalty = 0
+
+        for piece in my_pieces:
+            row, col = piece.row, piece.col
+
+            # if the piece is on an edge
+            if col == 0 or col == COLS - 1:
+                edge_bonus += 1
+
+            elif (row,col) in [(0,0, (0, COLS-1), (ROWS-1,0), (ROWS-1, COLS-1))]:
+                corner_bonus += 3
+
+            else:
+                if not piece.king:
+                    non_edge_penalty -= 0.5
+
+
+        edge_corner_score = edge_bonus + corner_bonus
+
+        # King Bonus: reward king pieces that are closer to the opponet's back row to make more threatening moves
+        king_position_score = 0
+
+        for piece in my_pieces:
+            if piece.king:
+                # toggle between color since color of agent determines how "far back" you are on the board
+                # reward further back rows
+
+                if self.color == BLACK:
+                    king_position_score += piece.row * 0.3
+                else:
+                    king_position_score += ((ROWS-1) - piece.row) * 0.3
+
+
+
         # Total evaluation
         total_score = (
             material_score
@@ -132,6 +175,9 @@ class Agent:
             + king_score
             + mobility_score
             + center_score
+            + edge_corner_score
+            + non_edge_penalty
+            + king_position_score
         )
 
         return total_score
