@@ -67,5 +67,9 @@ class Game:
   
   #update the display
   def update(self): 
-    self.board.draw(self.win) 
+    # In headless mode `self.win` may be None; skip rendering in that case.
+    if self.win is None:
+      return
+
+    self.board.draw(self.win)
     pygame.display.update()

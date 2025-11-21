@@ -20,7 +20,7 @@ class Agent:
       game_state: GameState instance for move generation and evaluation
     """
 
-    def __init__(self, color, depth=4):
+    def __init__(self, color, depth=4, search_type="minimax"):
         """
         Initialize the AI agent.
 
@@ -32,6 +32,7 @@ class Agent:
         """
         self.color = color
         self.depth = depth
+        self.search_type = search_type
         self.game_state = GameState()
 
         # Statistics for analysis (can be logged later)
@@ -276,6 +277,63 @@ class Agent:
 
             return min_eval
 
+    def expectimax(self, board, depth, maximizing_player):
+        """
+        Expectimax algorithm for decision making.
+
+        Expectimax is similar to minimax but models the opponent
+        as a stochastic agent. It minimizes the nodes that are then replaced by chance nodes
+        that compute the expected value over different states.
+
+        The search alternates between maximizing player nodes and chance
+        nodes, and returns the expected evaluation for the present position.
+
+        Args:
+          board: Current board state to evaluate
+          depth: Remaining search depth (counts down to 0)
+          maximizing_player: True if current node is for the maximizing player
+
+        Returns:
+          float: The expected evaluation score of the position
+        """
+        self.nodes_explored += 1
+
+        current_color = (
+            self.color if maximizing_player else (RED if self.color == BLACK else BLACK)
+        )
+
+        # Terminal / depth check
+        if depth == 0:
+            return self.evaluate(board)
+
+        if self.game_state.is_terminal(current_color, board):
+            if self.game_state.is_win(current_color, board):
+                return 1000 if current_color == self.color else -1000
+            elif self.game_state.is_lose(current_color, board):
+                return -1000 if current_color == self.color else 1000
+            else:
+                return 0
+
+        moves = self.game_state.get_legal_actions(current_color, board)
+        if not moves:
+            return -1000 if maximizing_player else 1000
+
+        if maximizing_player:
+            best = float("-inf")
+            for move in moves:
+                succ = self.game_state.generate_successor(board, move)
+                val = self.expectimax(succ, depth - 1, False)
+                if val > best:
+                    best = val
+            return best
+        else:
+            # Chance node: average value of successors
+            total = 0.0
+            for move in moves:
+                succ = self.game_state.generate_successor(board, move)
+                total += self.expectimax(succ, depth - 1, True)
+            return total / len(moves)
+
     def get_best_move(self, board):
         """
         Select the best move for the current board position using minimax.
@@ -313,9 +371,12 @@ class Agent:
         for move in moves:
             successor_board = self.game_state.generate_successor(board, move)
 
-            move_score = self.minimax(
-                successor_board, self.depth - 1, alpha, beta, False
-            )
+            if self.search_type == "expectimax":
+                move_score = self.expectimax(successor_board, self.depth - 1, False)
+            else:
+                move_score = self.minimax(
+                    successor_board, self.depth - 1, alpha, beta, False
+                )
 
             if move_score > best_score:
                 best_score = move_score

@@ -10,8 +10,8 @@ import argparse
 
 FPS = 60
 
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('Checkers')
+# `WIN` may be None in headless mode. Initialize later in `main()` when needed.
+WIN = None
 
 def get_row_col_from_mouse(pos):
     x, y = pos
@@ -46,7 +46,7 @@ def run_human_game():
     pygame.quit()
 
 
-def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0):
+def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0, black_search="minimax", red_search="minimax"):
     """
     Run AI vs AI game with comprehensive logging.
 
@@ -64,9 +64,9 @@ def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0):
     game = Game(WIN)
     game_state = GameState()
 
-    # Create AI agents
-    agent_black = Agent(BLACK, depth=depth)
-    agent_red = Agent(RED, depth=depth)
+    # Create AI agents (per-player search choice)
+    agent_black = Agent(BLACK, depth=depth, search_type=black_search)
+    agent_red = Agent(RED, depth=depth, search_type=red_search)
 
     logger.info(f"BLACK Agent: Search depth = {depth}")
     logger.info(f"RED Agent: Search depth = {depth}")
@@ -98,17 +98,19 @@ def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0):
         return board_str
 
     while run and turn_number < max_turns:
-        clock.tick(FPS)
+        # Only pump the event queue when running with a display
+        if WIN is not None:
+            clock.tick(FPS)
 
-        # Check for quit event
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-                logger.info("Game terminated by user")
+            # Check for quit event
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+                    logger.info("Game terminated by user")
+                    break
+
+            if not run:
                 break
-
-        if not run:
-            break
 
         turn_number += 1
         current_color = game.get_current_player()
@@ -191,9 +193,10 @@ def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0):
         # Log move execution
         logger.log_move_execution(best_move, current_color, is_jump, is_promotion)
 
-        # Update display
-        game.update()
-        pygame.display.update()
+        # Update display (no-op in headless)
+        if WIN is not None:
+            game.update()
+            pygame.display.update()
 
         # Log board state after move
         logger.log_board_state(game.board, f"Board After Turn {turn_number}")
@@ -219,25 +222,17 @@ def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0):
     if turn_number >= max_turns:
         logger.log_game_end(winner=None, reason=f"Maximum turns ({max_turns}) reached")
 
-    # Keep window open to see final state
-    logger.info("")
-    logger.info("Game complete. Close window to exit.")
-
-    waiting = True
-    while waiting:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                waiting = False
-        game.update()
-        pygame.display.update()
-        clock.tick(FPS)
-
     # Close logger
+    logger.info("")
+    logger.info("Game complete.")
     logger.close()
-    pygame.quit()
+    if WIN is not None:
+        # Keep window open to see final state
+        pygame.quit()
 
 
 def main():
+    global WIN
     parser = argparse.ArgumentParser(description="Checker Game with AI Agents")
     parser.add_argument(
         "--mode",
@@ -260,10 +255,32 @@ def main():
         default=1.0,
         help="Delay in seconds between AI moves (default: 1.0)",
     )
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Run without creating a display (headless mode)",
+    )
+    parser.add_argument(
+        "--black-search",
+        choices=["minimax", "expectimax"],
+        default="minimax",
+        help="Search algorithm for BLACK agent (default: minimax)",
+    )
+    parser.add_argument(
+        "--red-search",
+        choices=["minimax", "expectimax"],
+        default="minimax",
+        help="Search algorithm for RED agent (default: minimax)",
+    )
     args = parser.parse_args()
 
     if args.mode == "human":
         print("Running in human vs human mode")
+        # Ensure pygame display is available for human mode
+        if WIN is None:
+            pygame.init()
+            WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+            pygame.display.set_caption('Checkers')
         run_human_game()
     elif args.mode == "agent":
         # Convert log level string to LogLevel constant
@@ -274,13 +291,30 @@ def main():
         }
         log_level = log_level_map[args.log_level]
 
+        # Initialize display only if not headless
+        if not args.headless:
+            pygame.init()
+            WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+            pygame.display.set_caption('Checkers')
+
         print(f"Running AI vs AI mode")
         print(f"  Search depth: {args.depth}")
         print(f"  Log level: {args.log_level}")
         print(f"  Move delay: {args.delay}s")
+        print(f"  Headless: {args.headless}")
+        print(f"  BLACK search: {args.black_search}")
+        print(f"  RED search: {args.red_search}")
         print()
 
-        run_agent_game(depth=args.depth, log_level=log_level, move_delay=args.delay)
+        # Run with per-player search types
+        # Agents will be created inside run_agent_game to use the given search types
+        run_agent_game(
+            depth=args.depth,
+            log_level=log_level,
+            move_delay=args.delay,
+            black_search=args.black_search,
+            red_search=args.red_search,
+        )
 
 
 main()
