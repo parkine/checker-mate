@@ -81,6 +81,51 @@ class GameState:
 
     return actions
   
+  def get_double_jumps(self, color: Color, board: Board) ->list[Move]:
+    #black moves top to bottom
+    fw = 1 if color == BLACK else -1
+    bw = -1 if color == BLACK else 1
+    left = -1
+    right = 1
+
+    pieces = self.get_all_pieces(color, board)
+
+    actions = []
+    for p in pieces:
+      r, c = p.row, p.col
+
+      # check jumps
+      # forward left jump
+      mid_r_fl = r + fw
+      mid_c_fl = c + left
+      mid_p_fl = board.get_piece(mid_r_fl, mid_c_fl) if self.range_check(mid_r_fl, mid_c_fl) else 0
+      if self.jump_check(r + (fw * 2), c + (left * 2), p, mid_p_fl) and board.get_piece(r + (fw * 2), c + (left * 2)) == 0:
+        actions.append(Move(start=(r, c), end=(r + (fw * 2), c + (left * 2))))
+
+      # forward right jump
+      mid_r_fr = r + fw
+      mid_c_fr = c + right
+      mid_p_fr = board.get_piece(mid_r_fr, mid_c_fr) if self.range_check(mid_r_fr, mid_c_fr) else 0
+      if self.jump_check(r + (fw * 2), c + (right * 2), p, mid_p_fr) and board.get_piece(r + (fw * 2), c + (right * 2)) == 0:
+        actions.append(Move(start=(r, c), end=(r + (fw * 2), c + (right * 2))))
+
+      if(p.king):
+        # backward left jump
+        mid_r_bl = r + bw
+        mid_c_bl = c + left
+        mid_p_bl = board.get_piece(mid_r_bl, mid_c_bl) if self.range_check(mid_r_bl, mid_c_bl) else 0
+        if self.jump_check(r + (bw * 2), c + (left * 2), p, mid_p_bl) and board.get_piece(r + (bw * 2), c + (left * 2)) == 0:
+          actions.append(Move(start=(r, c), end=(r + (bw * 2), c + (left * 2))))
+
+        # backward right jump
+        mid_r_br = r + bw
+        mid_c_br = c + right
+        mid_p_br = board.get_piece(mid_r_br, mid_c_br) if self.range_check(mid_r_br, mid_c_br) else 0
+        if self.jump_check(r + (bw * 2), c + (right * 2), p, mid_p_br) and board.get_piece(r + (bw * 2), c + (right * 2)) == 0:
+          actions.append(Move(start=(r, c), end=(r + (bw * 2), c + (right * 2))))
+
+    return actions
+  
   #In my turn, if opponent has no pieces left, I win
   def is_win(self, color: Color, board: Board):
     opponent_color = RED if color == BLACK else BLACK

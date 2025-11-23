@@ -135,71 +135,88 @@ def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0, black_searc
                 logger.log_game_end(winner=None, reason="Draw - equal king count")
                 break
 
-        # Get legal moves
-        legal_actions = game_state.get_legal_actions(current_color, game.board)
-        logger.log_legal_moves(legal_actions, current_color)
+        
+        multijump, is_promotion, is_jump = False, False, True
+        while(is_jump and not is_promotion):
+            if multijump:
+                legal_actions = game_state.get_double_jumps(current_color, game.board)
+            else:
+                legal_actions = game_state.get_legal_actions(current_color, game.board)
+            logger.log_legal_moves(legal_actions, current_color)
 
-        # Check if agent has any moves
-        total_moves = len(legal_actions)
-        if total_moves == 0:
-            winner = RED if current_color == BLACK else BLACK
-            logger.log_game_end(winner, "Current player has no legal moves")
-            break
+            # Check if agent has any moves
+            total_moves = len(legal_actions)
+            if total_moves == 0:
+                winner = RED if current_color == BLACK else BLACK
+                if multijump:
+                    logger.log_game_end(winner, "Current player has no multi-jumps")
+                else:
+                    logger.log_game_end(winner, "Current player has no legal moves")
+                break
+            
+            # AI makes decision
+            logger.debug("AI is thinking...")
+            move_start_time = time.time()
+            best_move, score = current_agent.get_best_move(game.board, multijump)
+            move_end_time = time.time()
 
-        # AI makes decision
-        logger.debug("AI is thinking...")
-        move_start_time = time.time()
-        best_move, score = current_agent.get_best_move(game.board)
-        move_end_time = time.time()
+            if best_move is None:
+                winner = RED if current_color == BLACK else BLACK
+                if multijump:
+                    logger.log_game_end(winner, "AI could not find a valid multi-jump")
+                else:
+                    logger.log_game_end(winner, "AI could not find a valid move")
+                break
+            
+            # Log AI decision
+            stats = current_agent.get_statistics()
+            logger.log_ai_decision(current_agent, best_move, score, stats)
+            logger.log_move_time(move_end_time - move_start_time)
 
-        if best_move is None:
-            winner = RED if current_color == BLACK else BLACK
-            logger.log_game_end(winner, "AI could not find a valid move")
-            break
+            # Execute move
+            start_row, start_col = best_move.start
+            end_row, end_col = best_move.end
 
-        # Log AI decision
-        stats = current_agent.get_statistics()
-        logger.log_ai_decision(current_agent, best_move, score, stats)
-        logger.log_move_time(move_end_time - move_start_time)
+            # Check if it's a jump
+            is_jump = abs(start_row - end_row) == 2
 
-        # Execute move
-        start_row, start_col = best_move.start
-        end_row, end_col = best_move.end
+            # Select piece and move it
+            game.selected = game.board.get_piece(start_row, start_col)
+            moved = game._move(end_row, end_col)
 
-        # Check if it's a jump
-        is_jump = abs(start_row - end_row) == 2
-
-        # Select piece and move it
-        game.selected = game.board.get_piece(start_row, start_col)
-        moved = game._move(end_row, end_col)
-
-        if not moved:
-            logger.log_error(
-                f"Failed to execute move {best_move.start} -> {best_move.end}"
+            if not moved:
+                logger.log_error(
+                    f"Failed to execute move {best_move.start} -> {best_move.end}"
+                )
+                break
+            
+            # Check for promotion
+            piece = game.board.get_piece(end_row, end_col)
+            is_promotion = (
+                piece != 0
+                and piece.king
+                and (
+                    (current_color == BLACK and end_row == ROWS - 1)
+                    or (current_color == RED and end_row == 0)
+                )
             )
-            break
 
-        # Check for promotion
-        piece = game.board.get_piece(end_row, end_col)
-        is_promotion = (
-            piece != 0
-            and piece.king
-            and (
-                (current_color == BLACK and end_row == ROWS - 1)
-                or (current_color == RED and end_row == 0)
-            )
-        )
+            # Log move execution
+            logger.log_move_execution(best_move, current_color, is_jump, is_promotion)
 
-        # Log move execution
-        logger.log_move_execution(best_move, current_color, is_jump, is_promotion)
+            # Update display (no-op in headless)
+            if WIN is not None:
+                game.update()
+                pygame.display.update()
 
-        # Update display (no-op in headless)
-        if WIN is not None:
-            game.update()
-            pygame.display.update()
+            # Log board state after move
+            logger.log_board_state(game.board, f"Board After Turn {turn_number}")
 
-        # Log board state after move
-        logger.log_board_state(game.board, f"Board After Turn {turn_number}")
+            #multi jumps has to be made if there is a valid jump after one jump, and the piece is not promoted to be a King.
+            multijump = is_jump and not is_promotion
+            
+            # Delay for visualization
+            time.sleep(move_delay)
 
         # Check for position repetition (threefold repetition = draw)
         board_hash = get_board_hash(game.board)
@@ -214,9 +231,6 @@ def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0, black_searc
 
         # Switch turn
         game.switch_turn()
-
-        # Delay for visualization
-        time.sleep(move_delay)
 
     # Check if max turns reached
     if turn_number >= max_turns:

@@ -334,9 +334,9 @@ class Agent:
                 total += self.expectimax(succ, depth - 1, True)
             return total / len(moves)
 
-    def get_best_move(self, board):
+    def get_best_move(self, board, multijump):
         """
-        Select the best move for the current board position using minimax.
+        Select the best move for the current board position using minimax or expectimax.
 
         This is the main method called to get the agent's move decision.
         It evaluates all legal moves and returns the one with the best score.
@@ -355,7 +355,10 @@ class Agent:
         self.pruning_count = 0
 
         # Get all legal moves
-        moves = self.game_state.get_legal_actions(self.color, board)
+        if multijump:
+            moves = self.game_state.get_double_jumps(self.color, board)
+        else:
+            moves = self.game_state.get_legal_actions(self.color, board)
 
         if not moves:
             return None, 0
