@@ -214,6 +214,9 @@ def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0, black_searc
 
             #multi jumps has to be made if there is a valid jump after one jump, and the piece is not promoted to be a King.
             multijump = is_jump and not is_promotion
+            
+            # Delay for visualization
+            time.sleep(move_delay)
 
         # Check for position repetition (threefold repetition = draw)
         board_hash = get_board_hash(game.board)
@@ -228,9 +231,6 @@ def run_agent_game(depth=4, log_level=LogLevel.INFO, move_delay=1.0, black_searc
 
         # Switch turn
         game.switch_turn()
-
-        # Delay for visualization
-        time.sleep(move_delay)
 
     # Check if max turns reached
     if turn_number >= max_turns:
